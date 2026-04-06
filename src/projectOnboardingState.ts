@@ -1,5 +1,4 @@
 import memoize from 'lodash-es/memoize.js'
-import { join } from 'path'
 import {
   getCurrentProjectConfig,
   saveCurrentProjectConfig,
@@ -7,6 +6,7 @@ import {
 import { getCwd } from './utils/cwd.js'
 import { isDirEmpty } from './utils/file.js'
 import { getFsImplementation } from './utils/fsOperations.js'
+import { hasProjectInstructionFile } from './utils/projectInstructions.js'
 
 export type Step = {
   key: string
@@ -17,8 +17,9 @@ export type Step = {
 }
 
 export function getSteps(): Step[] {
-  const hasClaudeMd = getFsImplementation().existsSync(
-    join(getCwd(), 'CLAUDE.md'),
+  const hasRepoInstructions = hasProjectInstructionFile(
+    getCwd(),
+    getFsImplementation().existsSync,
   )
   const isWorkspaceDirEmpty = isDirEmpty(getCwd())
 
@@ -32,8 +33,8 @@ export function getSteps(): Step[] {
     },
     {
       key: 'claudemd',
-      text: 'Run /init to create a CLAUDE.md file with instructions for Claude',
-      isComplete: hasClaudeMd,
+      text: 'Set up repo instructions (/init creates CLAUDE.md; AGENTS.md also counts)',
+      isComplete: hasRepoInstructions,
       isCompletable: true,
       isEnabled: !isWorkspaceDirEmpty,
     },

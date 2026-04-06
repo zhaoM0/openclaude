@@ -20,6 +20,7 @@ import { getMemoryFiles, type MemoryFileInfo } from '../../utils/claudemd.js';
 import { getClaudeConfigHomeDir } from '../../utils/envUtils.js';
 import { getDisplayPath } from '../../utils/file.js';
 import { formatRelativeTimeAgo } from '../../utils/format.js';
+import { FALLBACK_PROJECT_INSTRUCTION_FILE, PRIMARY_PROJECT_INSTRUCTION_FILE } from '../../utils/projectInstructions.js';
 import { projectIsInGitRepo } from '../../utils/memory/versions.js';
 import { updateSettingsForSource } from '../../utils/settings/settings.js';
 import { Select } from '../CustomSelect/index.js';
@@ -49,9 +50,13 @@ export function MemoryFileSelector(t0) {
   } = t0;
   const existingMemoryFiles = use(getMemoryFiles());
   const userMemoryPath = join(getClaudeConfigHomeDir(), "CLAUDE.md");
-  const projectMemoryPath = join(getOriginalCwd(), "CLAUDE.md");
+  const projectPrimaryMemoryPath = join(getOriginalCwd(), PRIMARY_PROJECT_INSTRUCTION_FILE);
+  const projectFallbackMemoryPath = join(getOriginalCwd(), FALLBACK_PROJECT_INSTRUCTION_FILE);
+  const hasPrimaryProjectMemory = existingMemoryFiles.some(f_0 => f_0.path === projectPrimaryMemoryPath);
+  const hasFallbackProjectMemory = existingMemoryFiles.some(f_1 => f_1.path === projectFallbackMemoryPath);
+  const projectMemoryPath = hasPrimaryProjectMemory ? projectPrimaryMemoryPath : hasFallbackProjectMemory ? projectFallbackMemoryPath : projectPrimaryMemoryPath;
   const hasUserMemory = existingMemoryFiles.some(f => f.path === userMemoryPath);
-  const hasProjectMemory = existingMemoryFiles.some(f_0 => f_0.path === projectMemoryPath);
+  const hasProjectMemory = hasPrimaryProjectMemory || hasFallbackProjectMemory;
   const allMemoryFiles = [...existingMemoryFiles.filter(_temp).map(_temp2), ...(hasUserMemory ? [] : [{
     path: userMemoryPath,
     type: "User" as const,
@@ -90,7 +95,7 @@ export function MemoryFileSelector(t0) {
       description = "Saved in ~/.claude/CLAUDE.md";
     } else {
       if (file.type === "Project" && !file.isNested && file.path === projectMemoryPath) {
-        description = `${isGit ? "Checked in at" : "Saved in"} ./CLAUDE.md`;
+        description = `${isGit ? "Checked in at" : "Saved in"} ./${file.path === projectPrimaryMemoryPath ? PRIMARY_PROJECT_INSTRUCTION_FILE : FALLBACK_PROJECT_INSTRUCTION_FILE}`;
       } else {
         if (file.parent) {
           description = "@-imported";
