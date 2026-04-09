@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { join } from 'node:path'
 
 import {
+  findProjectInstructionFilePathInAncestors,
   FALLBACK_PROJECT_INSTRUCTION_FILE,
   getProjectInstructionFilePath,
   getProjectInstructionFilePaths,
@@ -65,5 +66,40 @@ describe('projectInstructions', () => {
       true,
     )
     expect(isProjectInstructionFileName('README.md')).toBe(false)
+  })
+
+  test('finds repo instructions in ancestor directories', () => {
+    const repoDir = '/repo'
+    const nestedDir = join(repoDir, 'packages', 'app')
+    const existingPaths = new Set([join(repoDir, PRIMARY_PROJECT_INSTRUCTION_FILE)])
+
+    expect(
+      findProjectInstructionFilePathInAncestors(
+        nestedDir,
+        path => existingPaths.has(path),
+      ),
+    ).toBe(join(repoDir, PRIMARY_PROJECT_INSTRUCTION_FILE))
+  })
+
+  test('prefers the closest ancestor project instruction file', () => {
+    const repoDir = '/repo'
+    const nestedProjectDir = join(repoDir, 'packages', 'app')
+    const existingPaths = new Set([
+      join(repoDir, PRIMARY_PROJECT_INSTRUCTION_FILE),
+      join(nestedProjectDir, FALLBACK_PROJECT_INSTRUCTION_FILE),
+    ])
+
+    expect(
+      findProjectInstructionFilePathInAncestors(
+        join(nestedProjectDir, 'src'),
+        path => existingPaths.has(path),
+      ),
+    ).toBe(join(nestedProjectDir, FALLBACK_PROJECT_INSTRUCTION_FILE))
+  })
+
+  test('returns null when no ancestor repo instruction file exists', () => {
+    expect(
+      findProjectInstructionFilePathInAncestors('/repo/packages/app', () => false),
+    ).toBeNull()
   })
 })

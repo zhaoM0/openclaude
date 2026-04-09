@@ -1,7 +1,7 @@
 import { getCwd } from './utils/cwd.js'
 import { isDirEmpty } from './utils/file.js'
 import { getFsImplementation } from './utils/fsOperations.js'
-import { hasProjectInstructionFile } from './utils/projectInstructions.js'
+import { findProjectInstructionFilePathInAncestors } from './utils/projectInstructions.js'
 
 export type Step = {
   key: string
@@ -12,10 +12,11 @@ export type Step = {
 }
 
 export function getSteps(): Step[] {
-  const hasRepoInstructions = hasProjectInstructionFile(
-    getCwd(),
-    getFsImplementation().existsSync,
-  )
+  const hasRepoInstructions =
+    findProjectInstructionFilePathInAncestors(
+      getCwd(),
+      getFsImplementation().existsSync,
+    ) !== null
   const isWorkspaceDirEmpty = isDirEmpty(getCwd())
 
   return [
